@@ -301,17 +301,17 @@ function instructionPage()
 		$("#left_cat").html("");
 		$("#right_cat").html("");
 		$("#exp_instruct").html("<img src='core/spinner.gif'>");
-		$.post("core/fileManager.php", { 'op':'checkdb', 'template':template.name }, 
- 			function(checkdb) {
-				if(checkdb == "success")
-				{
+		//$.post("core/fileManager.php", { 'op':'checkdb', 'template':template.name }, 
+ 		//	function(checkdb) {
+		//		if(checkdb == "success")
+		//		{
 				WriteDatabase();
-				}
-				else
-				{
+		//		}
+		//		else
+		//		{
 				WriteFile();
-				}
-			});	
+		//		}
+		//	});	
 		if(template.showResult == "show")
 		{
 		    calculateIAT();

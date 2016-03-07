@@ -1,6 +1,10 @@
 <?php
 $base_dir = realpath(dirname(__FILE__));
 
+$dsn = "mysql:host=localhost;dbname=iat";
+$db_user = "root";
+$db_passwd = "q";
+
 $newTemplate = array(
 	"name" => "",
 	"showResult" => "true",
@@ -30,8 +34,6 @@ $newTemplate = array(
 		"items" => array()
 	)
 );
-
-
 
 //update active and available templates
 function updateActive($optArr=NULL)
@@ -107,47 +109,39 @@ if( isset($_REQUEST['op']) )
 	switch($_REQUEST['op'])
 	{
 		case 'exists':
-			if( isset($_REQUEST['template']) )
-			{		
-				if( isset($_REQUEST['files']) )
-				{
-					$newfiles = array();
-					foreach ( $_REQUEST['files'] as $file )
-					{
-						$fullpath = "templates/".$_REQUEST['template']."/img/".$file;
-						if (file_exists("../".$fullpath))
-						{
-							array_push($newfiles, $fullpath);
-						}
-						else
-						{
-							array_push($newfiles, "core/no-image.jpg");
-						}
-					}
-					echo implode(",",$newfiles);
-				}
-				else
-				{
-					echo "Error 1.1: files to check not specified";
-				}
-			}
-			else
-			{
+			if(!isset($_REQUEST['template'])) {
 				echo "Error 1.0: template not specified";
+				return;
 			}
+			
+			if(!isset($_REQUEST['files'])) {
+				echo "Error 1.1: files to check not specified";
+				return;
+			}
+
+			$newfiles = array();
+			foreach ($_REQUEST['files'] as $file) {
+				$fullpath = "templates/" . $_REQUEST['template'] . "/img/" . $file;
+				if (file_exists("../".$fullpath)) {
+					array_push($newfiles, $fullpath);
+				} else {
+					array_push($newfiles, "core/no-image.jpg");
+				}
+			}
+			echo implode(",",$newfiles);
 			break;
+
 		case 'setActive':
-			if( isset($_REQUEST['template']) )
-			{
-				$optArr = array('newActive' => $_REQUEST['template']);		
-				updateActive($optArr);
-				echo "success";
-			}
-			else
-			{
+			if(!isset($_REQUEST['template'])) {
 				echo "Error 3.0: template not specified";
+				return;
 			}
+
+			$optArr = array('newActive' => $_REQUEST['template']);		
+			updateActive($optArr);
+			echo "success";
 			break;
+
 		case 'saveTemplate':
 			if( isset($_REQUEST['template']) )
 			{		
@@ -455,111 +449,101 @@ if( isset($_REQUEST['op']) )
 		case 'aggregate':
 			break;
 		case 'writeoutput':
-			if( isset($_REQUEST['template']) )
-			{
-				if( isset($_REQUEST['data']) )
-				{	
-					
-					$folder_dir = "../templates/".$_REQUEST['template']."/output/";
-
-					$sub = isset( $_REQUEST['subject'] ) ? $_REQUEST['subject'] : 'unknown2' ;
-
-					$data = $_REQUEST["data"]; 
-					$datetxt = date('Y-m-d-H-s');
-					$fh = fopen($folder_dir. $_REQUEST['template'] . "-" . $sub . '-' . $datetxt . '.txt', 'w');
-					fwrite($fh, $data);
-					fclose($fh);
-					
-					
-									
-				}
-				else
-				{
-					echo "Error 5.1: data not provided";
-				}
-			} 
-			else	
-			{
+			if(!isset($_REQUEST['template'])) {
 				echo "Error 5.0: template name not specified";
+				return;
 			}
+			
+			if(!isset($_REQUEST['data'])) {
+				echo "Error 5.1: data not provided";
+				return;
+			}
+					
+			$folder_dir = "../templates/" . $_REQUEST['template'] . "/output/";
+
+			$sub = $_REQUEST['subject'];
+			if (!isset($_REQUEST['subject']))
+				$sub = "unknown2";
+
+			$data = $_REQUEST["data"]; 
+			$datetxt = date('Y-m-d-H-s');
+			$fh = fopen($folder_dir. $_REQUEST['template'] . "-" . $sub . '-' . $datetxt . '.txt', 'w');
+			fwrite($fh, $data);
+			fclose($fh);
 			break;
 			
 		case 'writedatabase':
-			if( isset($_REQUEST['template']) )
-				{
-					if( isset($_REQUEST['data']) )
-					{	
-						
-						$dsn = "mysql:host=localhost";
-						try {
-							$pdo = new PDO($dsn, "IATexp555","myIAT");
-						}
-						catch(PDOException $e) { 
-                			echo 'ERROR: ' . $e->getMessage();
-                			break;
-            			}
-            			
-            			$dsn = "mysql:host=localhost";
-						$pdo = new PDO($dsn, "IATexp555","myIAT");
-						$pdo->query("USE `IAT555`;");
-						
-						$sub = isset( $_REQUEST['subject'] ) ? $_REQUEST['subject'] : 'unknown2' ; //Subject Identifier
-						$data = $_REQUEST["data"]; 
-						$tempname = isset( $_REQUEST['template'] ) ? $_REQUEST['template'] : 'Templateunknown' ; //Science etc
-						$catindex = $_POST['catindex'];
-						$category = $_POST['category'];
-						$datai = $_POST['datai'];
-						$dataj = $_POST['dataj'];
-						$errors = $_POST['errors'];
-						$mseconds = $_POST['mseconds'];
-						
-						
-						$sqltemplateid = $pdo->query("select * from Template where TemplateName='$tempname' Order By Templateid Desc Limit 0,1")->fetchColumn(); 
-						$queryinsert = $pdo->prepare("INSERT INTO Result(Templateid,TemplateName,Blocki,Trialj,Category,ItemIndex,Errors,Mseconds,User) VALUES ('$sqltemplateid','$tempname','$datai','$dataj','$category','$catindex','$errors','$mseconds','$sub');");
-						$queryinsert->execute();
-						}
-				}
-				
+			if(!isset($_REQUEST['template'])) {
+				echo "Error 5.0: template name not specified";
+				return;
+			}
+			
+			if(!isset($_REQUEST['data'])) {
+				echo "Error 5.1: data not provided";
+				return;
+			}
+
+			try {
+				$pdo = new PDO($dsn, $db_user, $db_passwd);
+
+				$sub = isset( $_REQUEST['subject'] ) ? $_REQUEST['subject'] : 'unknown2' ; //Subject Identifier
+				$data = $_REQUEST["data"]; 
+				$tempname = isset( $_REQUEST['template'] ) ? $_REQUEST['template'] : 'Templateunknown' ; //Science etc
+				$catindex = $_POST['catindex'];
+				$category = $_POST['category'];
+				$datai = $_POST['datai'];
+				$dataj = $_POST['dataj'];
+				$errors = $_POST['errors'];
+				$mseconds = $_POST['mseconds'];
+			
+				// echo "select * from Template where TemplateName='$tempname' order by Templateid desc limit 1";
+				$sqltemplate = $pdo->query("select * from Template where TemplateName='$tempname' order by Templateid desc limit 1");
+			} catch (PDOException $e) { 
+				die ($e->getMessage());
+				break;
+			}
+			
+			$sqltemplateid = $sqltemplate->fetch()['TemplateId'];
+			$queryinsert = $pdo->prepare("INSERT INTO Result(Templateid,TemplateName,Blocki,Trialj,Category,ItemIndex,Errors,Mseconds,User) VALUES ('$sqltemplateid','$tempname','$datai','$dataj','$category','$catindex','$errors','$mseconds','$sub');");
+			$queryinsert->execute();
+			echo "success";
 			break;
+
 		case 'checkdb':
-		if( isset($_REQUEST['template']) )
+			if(!isset($_REQUEST['template'])) {
+				echo "Error 5.0: template name not specified";
+				return;
+			}
+
+			$filepath = realpath(dirname(getcwd()));
+			$filename = $filepath. '/input-text';
+			if (file_exists($filename)) {
+				echo "The file $filename exists";
+				//error_log(print_r("The file $filename exists", TRUE));
+			} else 
 				{
-						
-						$filepath=realpath(dirname(getcwd()));
-						$filename = $filepath. '/input-text';
-						if (file_exists($filename)) {
-    						echo "The file $filename exists";
-    						//error_log(print_r("The file $filename exists", TRUE));
-						} else 
-							{
-    						echo "The file $filename does not exist";
-    						//error_log(print_r("The file $filename does not exist", TRUE));
-							$dsn = "mysql:host=localhost";
-							try {
-								$pdo = new PDO($dsn, "IATexp555","myIAT");
-								//error_log(print_r("Database exists", TRUE));
-								echo 'success';
-							}
-							catch(PDOException $e) { 
-                				echo 'ERROR';
-                				//error_log(print_r("Database doesn't exist", TRUE));
-            				}
-            			}
+				//echo "The file $filename does not exist";
+				//error_log(print_r("The file $filename does not exist", TRUE));
+				try {
+					$pdo = new PDO($dsn, $db_user, $db_passwd);
+					//error_log(print_r("Database exists", TRUE));
+					echo 'success';
+				}
+				catch(PDOException $e) { 
+					echo 'ERROR';
+					//error_log(print_r("Database doesn't exist", TRUE));
+				}
+			}
             		
             		
-            	}
-		
 			break;
 		case 'writeinput':
 			if( isset($_REQUEST['template']) )
 				{
 				if (isset($_REQUEST['form']) )
 					{
-						
-
-            			$dsn = "mysql:host=localhost";
-            			$pdo = new PDO($dsn, "IATexp555","myIAT");
-						$pdo->query("USE `IAT555`;");
+            			$pdo = new PDO($dsn, $db_user, $db_passwd);
+						$pdo->query("USE `iat`;");
 						$templatename=$_REQUEST['template'];
 						$showresult=$_REQUEST['showresult'];
 						$queryinsert = $pdo->prepare("INSERT INTO INSERT INTO Item(Items) VALUES ('$showresult');");
@@ -663,9 +647,7 @@ if( isset($_REQUEST['op']) )
 				
 			break;
 	}	
-} 
-else 
-{
+} else {
 	echo "Error -1: no operation specified";
 }
 

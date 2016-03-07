@@ -923,8 +923,7 @@ function saveTemplate(successCallback, errorCallback)
 	}
 	var formString = $("form").serialize();
 
-	FileMgr.post(FileMgr.getFileMgrPath(), 
-		{ "op": "saveTemplate", "template": templateId, "oldname": oldName, "form": formString}, 
+	FileMgr.post(FileMgr.getFileMgrPath(), { "op": "saveTemplate", "template": templateId, "oldname": oldName, "form": formString}, 
 		function(saveData) {	
 			returnedData = JSON.parse(saveData);
 			if (returnedData.name == templateId)
@@ -949,6 +948,20 @@ function saveTemplate(successCallback, errorCallback)
 // // 					console.log(templateData);
 // 					successCallback(saveData);
 // 				});
+
+
+			var showresult;
+			showresult=templates[templateId].showResult;
+			FileMgr.post(FileMgr.getFileMgrPath(), 
+			{ "op": "checkdb", "template": templateId, "form": formString, "showresult": showresult }, 
+			function(checkdb) {
+			if(checkdb == "success")
+					{
+						FileMgr.post(FileMgr.getFileMgrPath(), 
+						{ "op": "writeinput", "template": templateId, "form": formString, "showresult": showresult });
+					}
+				});
+
 			}
 			else if (saveData.slice(0,5) == "Error")
 			{
@@ -959,19 +972,6 @@ function saveTemplate(successCallback, errorCallback)
 				errorCallback(saveData);
 			}
 	});
-
-
-	var showresult;
-	showresult=templates[templateId].showResult;
-	FileMgr.post(FileMgr.getFileMgrPath(), 
-	{ "op": "checkdb", "template": templateId, "form": formString, "showresult": showresult }, 
-	function(checkdb) {
-	if(checkdb == "success")
-			{
-				FileMgr.post(FileMgr.getFileMgrPath(), 
-				{ "op": "writeinput", "template": templateId, "form": formString, "showresult": showresult });
-			}
-		});
 	
 }
 
